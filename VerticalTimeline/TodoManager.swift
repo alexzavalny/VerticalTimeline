@@ -146,11 +146,26 @@ class TodoManager: ObservableObject {
         let startOfDay = calendar.startOfDay(for: date)
         let today = calendar.startOfDay(for: Date())
         
-        // For today and future dates, show active todos
+        // For today's view, show all todos scheduled for today or earlier (past todos roll over to today)
+        // For future days, only show todos specifically scheduled for that day
+        // For past days, don't show active todos (they would have rolled over to today)
         let activeTodosForDate: [Todo]
         if startOfDay == today {
-            activeTodosForDate = activeTodos
+            // For today's view, include todos scheduled for today or earlier
+            activeTodosForDate = activeTodos.filter { todo ->
+                Bool in
+                let todoDate = calendar.startOfDay(for: todo.date)
+                return todoDate <= today
+            }
+        } else if startOfDay > today {
+            // For future dates, only show todos scheduled for that specific date
+            activeTodosForDate = activeTodos.filter { todo ->
+                Bool in
+                let todoDate = calendar.startOfDay(for: todo.date)
+                return todoDate == startOfDay
+            }
         } else {
+            // For past dates, don't show active todos
             activeTodosForDate = []
         }
         
