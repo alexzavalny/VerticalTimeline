@@ -10,6 +10,7 @@ import SwiftUI
 struct VerticalTimelineView: View {
     @StateObject private var todoManager = TodoManager()
     @State private var scrollToToday = true
+    @State private var showingSettingsSheet = false
     
     var body: some View {
         ScrollViewReader { scrollView in
@@ -56,6 +57,27 @@ struct VerticalTimelineView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                 }
+                
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        showingSettingsSheet = true
+                    }) {
+                        Image(systemName: "gear")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingSettingsSheet) {
+                SettingsView(onSettingsSaved: {
+                    // Reload data when settings are saved
+                    todoManager.loadData()
+                })
+            }
+            .alert("Error", isPresented: $todoManager.showErrorAlert) {
+                Button("OK") {
+                    todoManager.clearError()
+                }
+            } message: {
+                Text("The app will use the default location in your Documents folder.\n\n\(todoManager.error?.localizedDescription ?? "Unknown error occurred")")
             }
         }
         .environmentObject(todoManager)

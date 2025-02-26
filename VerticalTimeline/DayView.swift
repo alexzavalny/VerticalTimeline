@@ -119,6 +119,7 @@ struct TodoRow: View {
     @EnvironmentObject var todoManager: TodoManager
     let todo: Todo
     let date: Date
+    @State private var showingDeleteConfirmation = false
     
     var body: some View {
         HStack {
@@ -137,9 +138,40 @@ struct TodoRow: View {
                 .foregroundColor(todo.isCompleted ? .secondary : .primary)
             
             Spacer()
+            
+            // Undo button (only shown for completed todos)
+            if todo.isCompleted {
+                Button(action: {
+                    todoManager.undoCompletedTodo(todo, fromDate: date)
+                }) {
+                    Image(systemName: "arrow.uturn.backward")
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 8)
+            }
+            
+            // Delete button
+            Button(action: {
+                showingDeleteConfirmation = true
+            }) {
+                Image(systemName: "trash")
+                    .foregroundColor(.red)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal)
         .contentShape(Rectangle())
+        .confirmationDialog("Delete Todo", isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                todoManager.deleteTodo(todo, fromDate: date)
+            }
+            Button("Cancel", role: .cancel) {
+                // Do nothing, just dismiss the dialog
+            }
+        } message: {
+            Text("Are you sure you want to delete this todo?")
+        }
     }
 }
 

@@ -13,6 +13,10 @@ class TodoManager: ObservableObject {
     @Published var completedTodosByDate: [Date: [Todo]] = [:]
     @Published var allDates: [Date] = []
     
+    // Add error handling
+    @Published var error: Error? = nil
+    @Published var showErrorAlert = false
+    
     private let fileManager = TodoFileManager.shared
     
     init() {
@@ -20,6 +24,9 @@ class TodoManager: ObservableObject {
     }
     
     func loadData() {
+        // Clear any previous errors
+        error = nil
+        
         // Load active todos
         activeTodos = fileManager.loadActiveTodos()
         
@@ -54,6 +61,12 @@ class TodoManager: ObservableObject {
                 completedTodosByDate[startOfDay] = completedTodos
             }
         }
+        
+        // Show a message if we're using default folder and had to fall back
+        if fileManager.isUsingDefaultFolder {
+            self.error = TodoFileManagerError.folderAccessDenied(fileManager.dataFolderURL)
+            self.showErrorAlert = true
+        }
     }
     
     // Mark a todo as completed for a specific date
@@ -77,7 +90,13 @@ class TodoManager: ObservableObject {
         }
         
         // Save changes
-        saveChanges(forDate: startOfDay)
+        do {
+            try saveChanges(forDate: startOfDay)
+        } catch {
+            self.error = error
+            self.showErrorAlert = true
+            print("Error completing todo: \(error)")
+        }
     }
     
     // Add a new active todo
@@ -86,7 +105,14 @@ class TodoManager: ObservableObject {
         let startOfDay = calendar.startOfDay(for: date)
         let newTodo = Todo(title: title, date: startOfDay)
         activeTodos.append(newTodo)
-        saveChanges(forDate: startOfDay)
+        
+        do {
+            try saveChanges(forDate: startOfDay)
+        } catch {
+            self.error = error
+            self.showErrorAlert = true
+            print("Error adding todo: \(error)")
+        }
     }
     
     // Move incomplete todos to the next day
@@ -94,17 +120,23 @@ class TodoManager: ObservableObject {
         // This would be called at midnight or app startup
         // We don't actually need to change anything in our data model
         // as incomplete todos are automatically considered for "today"
-        saveChanges(forDate: date)
+        do {
+            try saveChanges(forDate: date)
+        } catch {
+            self.error = error
+            self.showErrorAlert = true
+            print("Error moving todos: \(error)")
+        }
     }
     
     // Save all changes to files
-    private func saveChanges(forDate date: Date? = nil) {
+    private func saveChanges(forDate date: Date? = nil) throws {
         // Save active todos
-        fileManager.saveActiveTodos(activeTodos)
+        try fileManager.saveActiveTodos(activeTodos)
         
         // Save completed todos for the specified date
         if let date = date, let completedTodos = completedTodosByDate[date] {
-            fileManager.saveCompletedTodos(completedTodos, forDate: date)
+            try fileManager.saveCompletedTodos(completedTodos, forDate: date)
         }
     }
     
@@ -126,5 +158,66 @@ class TodoManager: ObservableObject {
         let completedTodosForDate = completedTodosByDate[startOfDay] ?? []
         
         return (activeTodosForDate, completedTodosForDate)
+    }
+    
+    // Method to clear errors
+    func clearError() {
+        self.error = nil
+        self.showErrorAlert = false
+    }
+    
+    // Undo a completed todo (move it back to active todos)
+    func undoCompletedTodo(_ todo: Todo, fromDate date: Date) {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        
+        // Remove from completed todos
+        if var completedTodos = completedTodosByDate[startOfDay] {
+            if let index = completedTodos.firstIndex(where: { $0.id == todo.id }) {
+                completedTodos.remove(at: index)
+                completedTodosByDate[startOfDay] = completedTodos
+                
+                // Add back to active todos with isCompleted set to false
+                let activeTodo = Todo(title: todo.title, isCompleted: false, date: startOfDay)
+                activeTodos.append(activeTodo)
+                
+                // Save changes
+                do {
+                    try saveChanges(forDate: startOfDay)
+                } catch {
+                    self.error = error
+                    self.showErrorAlert = true
+                    print("Error undoing completed todo: \(error)")
+                }
+            }
+        }
+    }
+    
+    // Delete a todo (from either active or completed)
+    func deleteTodo(_ todo: Todo, fromDate date: Date) {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        
+        // Check if it's in active todos
+        if let index = activeTodos.firstIndex(where: { $0.id == todo.id }) {
+            activeTodos.remove(at: index)
+        }
+        
+        // Check if it's in completed todos
+        if var completedTodos = completedTodosByDate[startOfDay] {
+            if let index = completedTodos.firstIndex(where: { $0.id == todo.id }) {
+                completedTodos.remove(at: index)
+                completedTodosByDate[startOfDay] = completedTodos
+            }
+        }
+        
+        // Save changes
+        do {
+            try saveChanges(forDate: startOfDay)
+        } catch {
+            self.error = error
+            self.showErrorAlert = true
+            print("Error deleting todo: \(error)")
+        }
     }
 } 
