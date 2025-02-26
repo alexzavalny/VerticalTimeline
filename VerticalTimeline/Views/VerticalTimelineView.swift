@@ -15,19 +15,23 @@ struct VerticalTimelineView: View {
     var body: some View {
         ScrollViewReader { scrollView in
             ScrollView {
-                LazyVStack(spacing: 20) {
-                    ForEach(todoManager.allDates, id: \.self) { date in
-                        DayView(date: date)
-                            .id(date)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.white)
-                                    .shadow(color: .gray.opacity(0.2), radius: 3, x: 0, y: 1)
-                            )
-                            .padding(.horizontal, 16)
+                ZStack {
+                    Color.clear
+                    
+                    LazyVStack(spacing: 20) {
+                        ForEach(todoManager.allDates, id: \.self) { date in
+                            DayView(date: date)
+                                .id(date)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color(.windowBackgroundColor).opacity(0.7))
+                                        .shadow(color: .gray.opacity(0.2), radius: 3, x: 0, y: 1)
+                                )
+                                .padding(.horizontal, 16)
+                        }
                     }
+                    .padding(.vertical, 20)
                 }
-                .padding(.vertical, 20)
             }
             .onAppear {
                 if scrollToToday {

@@ -27,7 +27,7 @@ struct VerticalTimelineApp: App {
     
     var body: some Scene {
         WindowGroup {
-            VerticalTimelineView()
+            ContentView()
                 .frame(minWidth: 350, idealWidth: 400, maxWidth: 450)
                 .environmentObject(todoManager)
                 .onAppear {
@@ -37,5 +37,7 @@ struct VerticalTimelineApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
+        .defaultPosition(.center)
+        .defaultSize(width: 400, height: 600)
     }
 }
