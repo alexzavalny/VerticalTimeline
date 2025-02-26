@@ -1,0 +1,27 @@
+Create a macOS app for managing my todo list.
+
+The app is narrow forever vertically scrolling screen. 
+
+Scroll up to see previous days, scroll down to see next days.
+
+The top of the screen has a header with the date.
+
+The header also has a button to add a new todo for the current date.
+
+When you click on a todo's checkbox, it is marked as done and it stays in this day forever.
+
+If you don't check the todo, it is automatically moved to the next day.
+
+The app should be able to run on Apple Silicon.
+
+The app should be able to run on macOS 12.
+
+Is stores locally all data folder that contains MD files, one per day and reads them on startup - each file contains done tasks for that day.
+
+There is one file "todo.md" that contains all not done todos.
+
+The app is written in SwiftUI.
+
+The app is written in Swift.
+
+Design is minimalistic.
