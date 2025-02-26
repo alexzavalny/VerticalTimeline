@@ -240,7 +240,13 @@ class TodoFileManager {
     // MARK: - Active Todos
     
     func saveActiveTodos(_ todos: [Todo]) throws {
-        let todoStrings = todos.map { "- [ ] \($0.title)" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        
+        let todoStrings = todos.map { 
+            let dateString = formatter.string(from: $0.date)
+            return "- [ ] \($0.title) <\(dateString)>" 
+        }
         let fileContent = todoStrings.joined(separator: "\n")
         
         do {
@@ -262,11 +268,38 @@ class TodoFileManager {
             
             let content = try String(contentsOf: fileURL, encoding: .utf8)
             let todoLines = content.components(separatedBy: .newlines)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
             
             return todoLines.compactMap { line in
                 guard !line.isEmpty, line.hasPrefix("- [ ]") else { return nil }
-                let title = line.replacingOccurrences(of: "- [ ] ", with: "")
-                return Todo(title: title)
+                
+                // Extract title and date from the line
+                let title: String
+                let todoDate: Date
+                
+                // First, remove the checkbox prefix
+                let lineWithoutPrefix = line.replacingOccurrences(of: "- [ ] ", with: "")
+                
+                // Check if there's a date in the format <yyyy-MM-dd>
+                if let dateRangeStart = lineWithoutPrefix.range(of: " <", options: .backwards),
+                   let dateRangeEnd = lineWithoutPrefix.range(of: ">", options: .backwards, 
+                                                  range: dateRangeStart.upperBound..<lineWithoutPrefix.endIndex) {
+                    
+                    // Extract the title (everything before the date)
+                    title = lineWithoutPrefix[..<dateRangeStart.lowerBound].trimmingCharacters(in: .whitespaces)
+                    
+                    // Extract and parse the date
+                    let dateRange = dateRangeStart.upperBound..<dateRangeEnd.lowerBound
+                    let dateString = String(lineWithoutPrefix[dateRange])
+                    todoDate = formatter.date(from: dateString) ?? Date()
+                } else {
+                    // No date format found, use the whole line as title
+                    title = lineWithoutPrefix
+                    todoDate = Date()
+                }
+                
+                return Todo(title: title, isCompleted: false, date: todoDate)
             }
         } catch {
             print("Error loading active todos: \(error)")
