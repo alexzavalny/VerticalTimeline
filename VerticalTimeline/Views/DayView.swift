@@ -136,7 +136,6 @@ struct TodoRow: View {
             .buttonStyle(.plain)
             
             Text(todo.title)
-                .strikethrough(todo.isCompleted)
                 .foregroundColor(todo.isCompleted ? .secondary : .primary)
             
             Spacer()
