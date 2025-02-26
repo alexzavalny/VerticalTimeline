@@ -277,23 +277,27 @@ class TodoFileManager {
     // MARK: - Completed Todos
     
     func saveCompletedTodos(_ todos: [Todo], forDate date: Date) throws {
-        guard !todos.isEmpty else { return }
-        
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let dateString = formatter.string(from: date)
         let filename = "\(dateString).md"
+        
+        // If the todos array is empty, we either delete the file or clear its contents
+        if todos.isEmpty {
+            let fileURL = dataFolderURL.appendingPathComponent(filename)
+            if fileManager.fileExists(atPath: fileURL.path) {
+                // Either delete the file or write an empty string
+                try "".write(to: fileURL, atomically: true, encoding: .utf8)
+            }
+            return
+        }
         
         let todoStrings = todos.map { "- [x] \($0.title)" }
         let fileContent = todoStrings.joined(separator: "\n")
         
         do {
             let fileURL = dataFolderURL.appendingPathComponent(filename)
-            let existingContent = fileManager.fileExists(atPath: fileURL.path) ?
-                (try? String(contentsOf: fileURL, encoding: .utf8)) ?? "" : ""
-            
-            let newContent = existingContent.isEmpty ? fileContent : existingContent + "\n" + fileContent
-            try newContent.write(to: fileURL, atomically: true, encoding: .utf8)
+            try fileContent.write(to: fileURL, atomically: true, encoding: .utf8)
         } catch {
             print("Error saving completed todos for \(dateString): \(error)")
             throw TodoFileManagerError.fileAccessError(dataFolderURL.appendingPathComponent(filename), error)
