@@ -148,7 +148,7 @@ class TodoManager: ObservableObject {
         
         // For today and future dates, show active todos
         let activeTodosForDate: [Todo]
-        if startOfDay >= today {
+        if startOfDay == today {
             activeTodosForDate = activeTodos
         } else {
             activeTodosForDate = []
