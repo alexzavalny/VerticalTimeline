@@ -235,4 +235,32 @@ class TodoManager: ObservableObject {
             print("Error deleting todo: \(error)")
         }
     }
+    
+    // Update existing todo with new title
+    func updateTodo(_ todo: Todo, withTitle newTitle: String, forDate date: Date) {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        
+        // Update in active todos if it exists there
+        if let index = activeTodos.firstIndex(where: { $0.id == todo.id }) {
+            activeTodos[index].title = newTitle
+        }
+        
+        // Update in completed todos if it exists there
+        if var completedTodos = completedTodosByDate[startOfDay] {
+            if let index = completedTodos.firstIndex(where: { $0.id == todo.id }) {
+                completedTodos[index].title = newTitle
+                completedTodosByDate[startOfDay] = completedTodos
+            }
+        }
+        
+        // Save changes
+        do {
+            try saveChanges(forDate: startOfDay)
+        } catch {
+            self.error = error
+            self.showErrorAlert = true
+            print("Error updating todo: \(error)")
+        }
+    }
 } 

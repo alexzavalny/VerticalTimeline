@@ -122,6 +122,8 @@ struct TodoRow: View {
     let todo: Todo
     let date: Date
     @State private var showingDeleteConfirmation = false
+    @State private var showingEditTodoSheet = false
+    @State private var editedTodoText = ""
     
     var body: some View {
         HStack {
@@ -137,6 +139,12 @@ struct TodoRow: View {
             
             Text(todo.title)
                 .foregroundColor(todo.isCompleted ? .secondary : .primary)
+                .onTapGesture {
+                    if !todo.isCompleted {
+                        editedTodoText = todo.title
+                        showingEditTodoSheet = true
+                    }
+                }
             
             Spacer()
             
@@ -172,6 +180,38 @@ struct TodoRow: View {
             }
         } message: {
             Text("Are you sure you want to delete this todo?")
+        }
+        .sheet(isPresented: $showingEditTodoSheet) {
+            // Edit todo sheet
+            VStack(spacing: 16) {
+                Text("Edit Todo")
+                    .font(.headline)
+                    .padding()
+                
+                TextField("Enter todo title", text: $editedTodoText)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(.horizontal)
+                
+                HStack {
+                    Button("Cancel") {
+                        editedTodoText = ""
+                        showingEditTodoSheet = false
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Button("Save") {
+                        if !editedTodoText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            todoManager.updateTodo(todo, withTitle: editedTodoText, forDate: date)
+                            editedTodoText = ""
+                            showingEditTodoSheet = false
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(editedTodoText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding()
+            }
+            .presentationDetents([.height(200)])
         }
     }
 }
