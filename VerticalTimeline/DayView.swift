@@ -48,6 +48,7 @@ struct DayView: View {
                 }
             }
             .padding(.horizontal)
+            .padding(.top, 16)
             
             // Divider
             Rectangle()
@@ -80,6 +81,7 @@ struct DayView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 12)
         .sheet(isPresented: $showingAddTodoSheet) {
             // Add new todo sheet
             VStack(spacing: 16) {
