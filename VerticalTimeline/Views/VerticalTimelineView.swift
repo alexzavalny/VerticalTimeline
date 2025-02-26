@@ -11,6 +11,8 @@ struct VerticalTimelineView: View {
     @StateObject private var todoManager = TodoManager()
     @State private var scrollToToday = true
     @State private var showingSettingsSheet = false
+    @State private var showingDatePicker = false
+    @State private var selectedDate: Date = Date()
     
     var body: some View {
         ScrollViewReader { scrollView in
@@ -43,6 +45,33 @@ struct VerticalTimelineView: View {
                 }
             }
             .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        showingDatePicker = true
+                    }) {
+                        Image(systemName: "calendar")
+                    }
+                    .popover(isPresented: $showingDatePicker, arrowEdge: .bottom) {
+                        VStack {
+                            DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
+                                .datePickerStyle(GraphicalDatePickerStyle())
+                                .padding()
+                                .labelsHidden()
+                            
+                            Button("Go to Date") {
+                                let selectedDateStart = Calendar.current.startOfDay(for: selectedDate)
+                                withAnimation {
+                                    scrollView.scrollTo(selectedDateStart, anchor: .top)
+                                }
+                                showingDatePicker = false
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .padding(.bottom)
+                        }
+                        .frame(width: 300, height: 400)
+                    }
+                }
+                
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         let today = Calendar.current.startOfDay(for: Date())
